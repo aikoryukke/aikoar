@@ -1,90 +1,83 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
-<title>AR Camera Debug</title>
-<style>
-  html,body{margin:0;padding:0;background:#000;overflow:hidden}
-  #wrap{position:relative;width:100vw;height:100dvh}
-  video,#frame{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  #frame{pointer-events:none}
-  #controls{
-    position:fixed;bottom:calc(env(safe-area-inset-bottom)+20px);left:0;width:100%;
-    display:flex;justify-content:center;gap:14px;z-index:1000
-  }
-  button{font-size:16px;padding:12px 20px;border:none;border-radius:10px;background:#fff;opacity:.9}
-  #log{position:absolute;top:8px;left:8px;font:12px/1 monospace;color:#0f0;z-index:1000;
-       background:rgba(0,0,0,.4);padding:2px 4px;border-radius:4px;}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>Simple AR Camera</title>
+  <style>
+    html,body {margin:0;padding:0;overflow:hidden;background:#000;}
+    #wrapper       {position:relative;width:100vw;height:100vh;}
+    video          {position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
+    #frame         {position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+    #controls      {position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+                    display:flex;gap:12px;}
+    button         {font-size:16px;padding:10px 18px;border:none;border-radius:8px;
+                    background:#fff;opacity:.9;}
+  </style>
 </head>
 <body>
-<div id="wrap">
-  <video id="video" playsinline muted></video>
-  <img  id="frame" src="frame.png" alt="">
-  <div id="log"></div>
-
-  <div id="controls">
-    <button id="start">カメラ開始</button>
-    <button id="shot" style="display:none;">撮影</button>
+  <div id="wrapper">
+    <video id="video" playsinline muted></video>
+    <img id="frame" src="frame.png" alt="frame">
+    <div id="controls">
+      <button id="startBtn">カメラ開始</button>
+      <button id="shotBtn"  style="display:none;">撮影</button>
+    </div>
+    <!-- オフスクリーン描画用 -->
+    <canvas id="canvas" style="display:none;"></canvas>
   </div>
 
-  <canvas id="cvs" style="display:none;"></canvas>
-</div>
+  <script>
+  const video   = document.getElementById('video');
+  const frame   = document.getElementById('frame');
+  const canvas  = document.getElementById('canvas');
+  const startBtn= document.getElementById('startBtn');
+  const shotBtn = document.getElementById('shotBtn');
 
-<script>
-const $   = id => document.getElementById(id);
-const log = txt => { $.log.textContent = txt };
+  let stream = null;
 
-let stream = null;
-
-// ──────────── カメラ開始 ────────────
-$('start').onclick = async () => {
-  alert('ボタンは押されました');                 // ← クリック確認アラート
-  log('⏳ カメラ要求中…');
-
-  try{
-    // 背面優先で取得。失敗したらフロントへフォールバック
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:{ ideal:'environment'} },
-      audio:false
-    }).catch(err=>{
-      if(err.name==='OverconstrainedError') return navigator.mediaDevices.getUserMedia({video:true});
-      throw err;
-    });
-
-    $('video').srcObject = stream;
-    await $('video').play();
-
-    $('start').style.display='none';
-    $('shot' ).style.display='inline-block';
-    log('✅ stream OK');
-  }catch(e){
-    log('❌ ' + e.name + ': ' + e.message);      // ← 失敗原因を画面左上に表示
-    alert('カメラが起動できません:\n' + e.name + '\n' + e.message);
-  }
-};
-
-// ──────────── 撮影＆保存 ────────────
-$('shot').onclick = () => {
-  const v = $('video'), cvs = $('cvs');
-  cvs.width  = v.videoWidth;
-  cvs.height = v.videoHeight;
-  const ctx = cvs.getContext('2d');
-  ctx.drawImage(v,0,0,cvs.width,cvs.height);
-  ctx.drawImage($('frame'),0,0,cvs.width,cvs.height);
-
-  cvs.toBlob(b=>{
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(b);
-    a.download = 'photo.png';
-    a.click();
-    URL.revokeObjectURL(a.href);
+  // 1️⃣ カメラ起動（ユーザー操作必須：iOS の制約）
+  startBtn.addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },  // 背面カメラ優先
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      startBtn.style.display = 'none';
+      shotBtn.style.display  = 'inline-block';
+    } catch(e){
+      alert('カメラにアクセスできませんでした: ' + e.message);
+    }
   });
-};
 
-// ──────────── ページ離脱時はカメラ停止 ────────────
-window.addEventListener('beforeunload',()=>stream?.getTracks().forEach(t=>t.stop()));
-</script>
+  // 2️⃣ 撮影 → 画像保存
+  shotBtn.addEventListener('click', () => {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+
+    // Canvas を動画サイズに合わせて描画
+    canvas.width  = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);          // 背景: カメラ映像
+    ctx.drawImage(frame, 0, 0, w, h);          // 前景: PNG フレーム
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'photo.png';             // 端末の写真フォルダに保存
+      link.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
+
+  // 3️⃣ ページ離脱時はカメラ停止（バッテリー節約）
+  window.addEventListener('beforeunload', () => {
+    stream?.getTracks().forEach(t => t.stop());
+  });
+  </script>
 </body>
 </html>
