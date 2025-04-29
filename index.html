@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>シンプル写真撮影アプリ</title>
+    <title>写真撮影アプリ（背景透過強化版）</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -77,11 +77,6 @@
             color: #f44336;
         }
         
-        .frame-option svg {
-            max-width: 80%;
-            max-height: 80%;
-        }
-        
         .camera-container {
             position: absolute;
             top: 0;
@@ -115,6 +110,11 @@
         }
         
         #canvas {
+            display: none;
+            position: absolute;
+        }
+        
+        #temp-canvas {
             display: none;
             position: absolute;
         }
@@ -223,7 +223,7 @@
             max-height: 50%;
             position: absolute;
             display: none;
-            mix-blend-mode: multiply;
+            mix-blend-mode: screen;
         }
     </style>
 </head>
@@ -244,7 +244,7 @@
             </div>
             <div class="frame-option" data-frame="custom" style="position: relative; overflow: visible;">
                 <div style="background-color: #333; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                    <img src="frame.png" alt="ミャクミャク" style="max-width: 80%; max-height: 80%; object-fit: contain; mix-blend-mode: multiply;">
+                    <img src="frame.png" alt="ミャクミャク" style="max-width: 80%; max-height: 80%; object-fit: contain;">
                 </div>
                 <div style="position: absolute; top: -10px; right: -10px; background-color: #ff5252; color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center;">M</div>
             </div>
@@ -254,6 +254,7 @@
             <video id="video" autoplay playsinline></video>
             <img id="photo" alt="撮影した写真">
             <canvas id="canvas"></canvas>
+            <canvas id="temp-canvas"></canvas>
             
             <div id="overlay-container">
                 <!-- SVGフレームを直接埋め込み -->
@@ -297,6 +298,7 @@
         const video = document.getElementById('video');
         const photo = document.getElementById('photo');
         const canvas = document.getElementById('canvas');
+        const tempCanvas = document.getElementById('temp-canvas');
         const takePhotoButton = document.getElementById('take-photo');
         const switchCameraButton = document.getElementById('switch-camera');
         const backButton = document.getElementById('back-button');
@@ -359,6 +361,8 @@
                     // キャンバスサイズをカメラに合わせる
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
+                    tempCanvas.width = video.videoWidth;
+                    tempCanvas.height = video.videoHeight;
                     
                     // ステータスメッセージを非表示
                     statusMessage.style.display = 'none';
@@ -395,7 +399,7 @@
             }
         }
         
-        // 写真撮影関数 - 両方のフレームに対応
+        // 写真撮影関数 - 背景透過処理を強化
         function takePhoto() {
             try {
                 // フラッシュ表示
@@ -464,15 +468,19 @@
                     }
                 } else if (selectedFrame === 'custom' && frameEnabled) {
                     try {
-                        // ミャクミャク画像をCanvasに描画
+                        // --- 新しいアプローチ：クロマキー風の処理で白背景を透過 ---
                         const imgEl = document.getElementById('custom-frame');
+                        
+                        // 一時キャンバスを使用
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                         
                         // キャンバスの中心
                         const centerX = canvas.width / 2;
                         const centerY = canvas.height / 2;
                         
-                        // 画像サイズの計算（キャンバスの50%を上限）
-                        const maxSize = Math.min(canvas.width, canvas.height) * 0.5;
+                        // 画像サイズの計算（キャンバスの40%に制限→小さくすることで目立ちにくく）
+                        const maxSize = Math.min(canvas.width, canvas.height) * 0.4;
                         
                         // アスペクト比を維持
                         let drawWidth, drawHeight;
@@ -485,15 +493,31 @@
                         }
                         
                         // 描画位置（中央配置）
-                        const x = centerX - (drawWidth / 2);
-                        const y = centerY - (drawHeight / 2);
+                        const x = (tempCanvas.width - drawWidth) / 2;
+                        const y = (tempCanvas.height - drawHeight) / 2;
                         
-                        // 透明部分を保持するために合成モードを設定
-                        context.globalCompositeOperation = 'source-over';
+                        // フレーム画像を一時キャンバスに描画
+                        tempCtx.drawImage(imgEl, x, y, drawWidth, drawHeight);
                         
-                        // 画像を描画
-                        context.drawImage(imgEl, x, y, drawWidth, drawHeight);
-                        console.log('ミャクミャクフレームを描画しました');
+                        // ピクセルデータを取得して処理
+                        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                        const data = imageData.data;
+                        
+                        // 白または明るい色を透明に
+                        for (let i = 0; i < data.length; i += 4) {
+                            // RGBがすべて高い値（白または明るい色）なら透明に
+                            if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) {
+                                data[i + 3] = 0; // アルファチャンネルを0に
+                            }
+                        }
+                        
+                        // 処理した画像を一時キャンバスに戻す
+                        tempCtx.putImageData(imageData, 0, 0);
+                        
+                        // 処理済みの一時キャンバスをメインキャンバスに描画
+                        context.drawImage(tempCanvas, 0, 0);
+                        
+                        console.log('ミャクミャクフレームを透過処理して描画しました');
                     } catch (e) {
                         console.error('ミャクミャクフレーム描画エラー:', e);
                     }
