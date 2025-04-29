@@ -194,7 +194,7 @@
         <div class="frame-selector">
             <div class="frame-option none active" data-frame="none"></div>
             <div class="frame-option" data-frame="custom" style="position: relative; overflow: visible;">
-                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANnSURBVHhe7ZvNThNRFMf/58xMO1CgFCGiQNRoojHRjS5d+RDufBJXPoJv4BN07calsHDhQoKJiZFoCBhC+KAFWmY6c4/3TprU0GFa0o/Tmd8vIHPa3raT/zm359bkAojAGGsAWAcQaK1lE6FQStlarcaGYZzi2bM36sGjR8GrV2/c/b099+D1a+/g4ED2ej3PNE1SChyGwZCyGIdStSdKTR39Hs1FoGEYZ7PZrHL06LHZiYnJST4xkcsZVjorx8bnxnPF8txsIX/EMizHGRt3bcdxHafgOE7BdWzj7NmTnPHx/EK5XD5Xr9eNs/U6+/jRwadPbfReebi11UCn08FenwEWB8cYpNaAjWGZDF5vAA4D8hzQwggbdcGqHMEqQKqEuATHPqPU0lJUhTQn0FJ6vZbXPWlMTRUzk5Pj+Xx+LJvNcmvMsKXleI7tBgW7IKanzxkz5TJ/f+FCafHC+fVGo+G32w209/fRuH0bXwGcBIZlbgq1nN6/uMzJdJQm8AAYD0aQUmrD9zGfyeCCbbNKscj2mhrxRVUwHXh6OdBRoNEXyJ1OxjZMSCnheZ5wXdc0/Z7p94LM4eGhXa/X7a3NDXu9WrXX19ft2QzTGZ/vw/N6aIVhuAegFYZhu9vttkK/J3rdnhjL5ZyZ0rxp2Jni0tIS5uxc6H/r+u23rrfTEd/Cg0L4qScUU5BSClrrcRzOzc1ZhUIh8H3f3N7aNquVilWpVMdardZ4p9PBwqVL2IhHXcYRXHsYRq//0+u/b/S32w1jGMiZDH6pnx/NrRJpFZ5FXwGe55lhGCrf98nzPPT7fUHvGfq+vF+5jFvxKB1o9QxLvXr8GDuMYTqTwZ1Y4kAyE8g4RyaXwz0ALSXRiUSjlMLu7i5evnyJrFJ4BGAnHvUbw5YoCcOUQlVr3AzD8Eu8TEQiEpvNJnZ2drC8vIzV1VWsra1B7e/jJoBXAFbj8G/FdVW1FD638GcTmjS2trZQq9UunZycoNVq4c2bFr5/O0b76Ajt9nfsPXuGhwCuxeH/Ih6lXy4mLfFrlP1JTGAURbh69Sp2d3chhNA7Ozu6WCzq+fl5fWN/X396/17v7+/r+Iqj1Gq1EiEviWwcBpLI6Qs7CoocTvSdyJGIQAIJEUggIYJAAgkRBBJIiCCQQEIEgQQSIggkkBBBIIGECAIJJEQQSCAhgkACCREEEkiIIJBAQgSBBBIiCCSQEEEggYQIAgkkRBD4iwM/AOxAn31V7UdFAAAAAElFTkSuQmCC" alt="カスタムフレーム">
+                <img src="frame.png" alt="カスタムフレーム">
                 <div style="position: absolute; top: -10px; right: -10px; background-color: #ff5252; color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center;">✓</div>
             </div>
         </div>
@@ -205,7 +205,7 @@
             <canvas id="canvas"></canvas>
             
             <div class="frame-overlay">
-                <img id="frame-image" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANnSURBVHhe7ZvNThNRFMf/58xMO1CgFCGiQNRoojHRjS5d+RDufBJXPoJv4BN07calsHDhQoKJiZFoCBhC+KAFWmY6c4/3TprU0GFa0o/Tmd8vIHPa3raT/zm359bkAojAGGsAWAcQaK1lE6FQStlarcaGYZzi2bM36sGjR8GrV2/c/b099+D1a+/g4ED2ej3PNE1SChyGwZCyGIdStSdKTR39Hs1FoGEYZ7PZrHL06LHZiYnJST4xkcsZVjorx8bnxnPF8txsIX/EMizHGRt3bcdxHafgOE7BdWzj7NmTnPHx/EK5XD5Xr9eNs/U6+/jRwadPbfReebi11UCn08FenwEWB8cYpNaAjWGZDF5vAA4D8hzQwggbdcGqHMEqQKqEuATHPqPU0lJUhTQn0FJ6vZbXPWlMTRUzk5Pj+Xx+LJvNcmvMsKXleI7tBgW7IKanzxkz5TJ/f+FCafHC+fVGo+G32w209/fRuH0bXwGcBIZlbgq1nN6/uMzJdJQm8AAYD0aQUmrD9zGfyeCCbbNKscj2mhrxRVUwHXh6OdBRoNEXyJ1OxjZMSCnheZ5wXdc0/Z7p94LM4eGhXa/X7a3NDXu9WrXX19ft2QzTGZ/vw/N6aIVhuAegFYZhu9vttkK/J3rdnhjL5ZyZ0rxp2Jni0tIS5uxc6H/r+u23rrfTEd/Cg0L4qScUU5BSClrrcRzOzc1ZhUIh8H3f3N7aNquVilWpVMdardZ4p9PBwqVL2IhHXcYRXHsYRq//0+u/b/S32w1jGMiZDH6pnx/NrRJpFZ5FXwGe55lhGCrf98nzPPT7fUHvGfq+vF+5jFvxKB1o9QxLvXr8GDuMYTqTwZ1Y4kAyE8g4RyaXwz0ALSXRiUSjlMLu7i5evnyJrFJ4BGAnHvUbw5YoCcOUQlVr3AzD8Eu8TEQiEpvNJnZ2drC8vIzV1VWsra1B7e/jJoBXAFbj8G/FdVW1FD638GcTmjS2trZQq9UunZycoNVq4c2bFr5/O0b76Ajt9nfsPXuGhwCuxeH/Ih6lXy4mLfFrlP1JTGAURbh69Sp2d3chhNA7Ozu6WCzq+fl5fWN/X396/17v7+/r+Iqj1Gq1EiEviWwcBpLI6Qs7CoocTvSdyJGIQAIJEUggIYJAAgkRBBJIiCCQQEIEgQQSIggkkBBBIIGECAIJJEQQSCAhgkACCREEEkiIIJBAQgSBBBIiCCSQEEEggYQIAgkkRBD4iwM/AOxAn31V7UdFAAAAAElFTkSuQmCC" alt="フレーム">
+                <img id="frame-image" src="frame.png" alt="フレーム">
             </div>
             
             <div id="status-message"></div>
@@ -311,8 +311,8 @@
                 // 選択中のフレームを描画
                 const selectedFrame = document.querySelector('.frame-option.active').dataset.frame;
                 if (selectedFrame === 'custom' && frameEnabled) {
-                    // 直接frameImageを使用
                     try {
+                        // フレーム画像をGitHubのパスから直接使用
                         if (frameImage.complete && frameImage.naturalWidth > 0) {
                             // 既にロードされているフレーム画像を使用
                             context.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
@@ -331,8 +331,8 @@
                                 showMessage('フレーム適用エラー、写真だけ保存します');
                                 finishCapture();
                             };
-                            // Base64文字列を直接指定
-                            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANnSURBVHhe7ZvNThNRFMf/58xMO1CgFCGiQNRoojHRjS5d+RDufBJXPoJv4BN07calsHDhQoKJiZFoCBhC+KAFWmY6c4/3TprU0GFa0o/Tmd8vIHPa3raT/zm359bkAojAGGsAWAcQaK1lE6FQStlarcaGYZzi2bM36sGjR8GrV2/c/b099+D1a+/g4ED2ej3PNE1SChyGwZCyGIdStSdKTR39Hs1FoGEYZ7PZrHL06LHZiYnJST4xkcsZVjorx8bnxnPF8txsIX/EMizHGRt3bcdxHafgOE7BdWzj7NmTnPHx/EK5XD5Xr9eNs/U6+/jRwadPbfReebi11UCn08FenwEWB8cYpNaAjWGZDF5vAA4D8hzQwggbdcGqHMEqQKqEuATHPqPU0lJUhTQn0FJ6vZbXPWlMTRUzk5Pj+Xx+LJvNcmvMsKXleI7tBgW7IKanzxkz5TJ/f+FCafHC+fVGo+G32w209/fRuH0bXwGcBIZlbgq1nN6/uMzJdJQm8AAYD0aQUmrD9zGfyeCCbbNKscj2mhrxRVUwHXh6OdBRoNEXyJ1OxjZMSCnheZ5wXdc0/Z7p94LM4eGhXa/X7a3NDXu9WrXX19ft2QzTGZ/vw/N6aIVhuAegFYZhu9vttkK/J3rdnhjL5ZyZ0rxp2Jni0tIS5uxc6H/r+u23rrfTEd/Cg0L4qScUU5BSClrrcRzOzc1ZhUIh8H3f3N7aNquVilWpVMdardZ4p9PBwqVL2IhHXcYRXHsYRq//0+u/b/S32w1jGMiZDH6pnx/NrRJpFZ5FXwGe55lhGCrf98nzPPT7fUHvGfq+vF+5jFvxKB1o9QxLvXr8GDuMYTqTwZ1Y4kAyE8g4RyaXwz0ALSXRiUSjlMLu7i5evnyJrFJ4BGAnHvUbw5YoCcOUQlVr3AzD8Eu8TEQiEpvNJnZ2drC8vIzV1VWsra1B7e/jJoBXAFbj8G/FdVW1FD638GcTmjS2trZQq9UunZycoNVq4c2bFr5/O0b76Ajt9nfsPXuGhwCuxeH/Ih6lXy4mLfFrlP1JTGAURbh69Sp2d3chhNA7Ozu6WCzq+fl5fWN/X396/17v7+/r+Iqj1Gq1EiEviWwcBpLI6Qs7CoocTvSdyJGIQAIJEUggIYJAAgkRBBJIiCCQQEIEgQQSIggkkBBBIIGECAIJJEQQSCAhgkACCREEEkiIIJBAQgSBBBIiCCSQEEEggYQIAgkkRBD4iwM/AOxAn31V7UdFAAAAAElFTkSuQmCC";
+                            // GitHubの実際のフレームファイルパスを使用
+                            img.src = "frame.png";
                         }
                     } catch (e) {
                         console.error('フレーム描画エラー:', e);
@@ -402,6 +402,21 @@
         document.addEventListener('DOMContentLoaded', () => {
             // 初期状態でカメラを起動
             startCamera();
+            
+            // フレーム画像の読み込み確認
+            frameImage.onload = function() {
+                console.log('フレーム画像の読み込みが完了しました');
+                frameEnabled = true;
+            };
+            
+            frameImage.onerror = function(e) {
+                console.error('フレーム画像の読み込みに失敗しました:', e);
+                showMessage('フレーム画像の読み込みに失敗しました。サーバーのパスを確認してください。', 3000);
+                frameEnabled = false;
+            };
+            
+            // フレーム画像のソースを設定
+            frameImage.src = 'frame.png';
             
             // 撮影ボタンのイベントリスナー
             takePhotoButton.addEventListener('click', takePhoto);
