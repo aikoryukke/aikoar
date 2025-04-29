@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>写真撮影アプリ（背景透過強化版）</title>
+    <title>写真撮影アプリ</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -23,58 +23,6 @@
             height: 100vh;
             position: relative;
             max-width: 100%;
-        }
-        
-        header {
-            text-align: center;
-            padding: 10px;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        
-        h1 {
-            margin: 0;
-            font-size: 20px;
-        }
-        
-        .frame-selector {
-            display: flex;
-            padding: 10px;
-            gap: 10px;
-            overflow-x: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-            position: absolute;
-            top: 40px;
-            left: 0;
-            right: 0;
-            z-index: 100;
-        }
-        
-        .frame-option {
-            width: 60px;
-            height: 45px;
-            border: 2px solid #555;
-            border-radius: 4px;
-            cursor: pointer;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #333;
-        }
-        
-        .frame-option.active {
-            border-color: #4285f4;
-        }
-        
-        .frame-option.none::after {
-            content: "×";
-            font-size: 20px;
-            color: #f44336;
         }
         
         .camera-container {
@@ -211,45 +159,16 @@
             align-items: center;
         }
         
-        #svg-frame {
-            max-width: 80%;
-            max-height: 80%;
-            position: absolute;
-            display: none;
-        }
-        
         #custom-frame {
-            max-width: 50%;
-            max-height: 50%;
+            max-width: 40%;
+            max-height: 40%;
             position: absolute;
-            display: none;
-            mix-blend-mode: screen;
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <header>
-            <h1>写真撮影アプリ</h1>
-        </header>
-        
-        <div class="frame-selector">
-            <div class="frame-option none active" data-frame="none"></div>
-            <div class="frame-option" data-frame="svg" style="position: relative; overflow: visible;">
-                <svg width="40" height="30" viewBox="0 0 300 300">
-                    <circle cx="150" cy="150" r="100" stroke="red" stroke-width="8" fill="none"/>
-                    <polygon points="50,30 60,50 80,55 65,70 70,90 50,80 30,90 35,70 20,55 40,50" fill="blue" transform="scale(0.5)"/>
-                </svg>
-                <div style="position: absolute; top: -10px; right: -10px; background-color: #4285f4; color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center;">S</div>
-            </div>
-            <div class="frame-option" data-frame="custom" style="position: relative; overflow: visible;">
-                <div style="background-color: #333; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                    <img src="frame.png" alt="ミャクミャク" style="max-width: 80%; max-height: 80%; object-fit: contain;">
-                </div>
-                <div style="position: absolute; top: -10px; right: -10px; background-color: #ff5252; color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center;">M</div>
-            </div>
-        </div>
-        
         <div class="camera-container">
             <video id="video" autoplay playsinline></video>
             <img id="photo" alt="撮影した写真">
@@ -257,24 +176,6 @@
             <canvas id="temp-canvas"></canvas>
             
             <div id="overlay-container">
-                <!-- SVGフレームを直接埋め込み -->
-                <svg id="svg-frame" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
-                    <!-- 透明背景 -->
-                    <rect width="300" height="300" fill="none"/>
-                    
-                    <!-- 赤い丸いフレーム - 中央は透明 -->
-                    <circle cx="150" cy="150" r="120" stroke="red" stroke-width="10" fill="none"/>
-                    
-                    <!-- 青い星 - 左上 -->
-                    <polygon points="50,30 60,50 80,55 65,70 70,90 50,80 30,90 35,70 20,55 40,50" fill="blue"/>
-                    
-                    <!-- 緑の星 - 右下 -->
-                    <polygon points="250,230 260,250 280,255 265,270 270,290 250,280 230,290 235,270 220,255 240,250" fill="green"/>
-                    
-                    <!-- テキスト -->
-                    <text x="150" y="160" font-family="Arial" font-size="20" text-anchor="middle" fill="purple">透明フレーム</text>
-                </svg>
-                
                 <!-- ミャクミャク画像フレーム -->
                 <img id="custom-frame" src="frame.png" alt="ミャクミャクフレーム">
             </div>
@@ -302,9 +203,7 @@
         const takePhotoButton = document.getElementById('take-photo');
         const switchCameraButton = document.getElementById('switch-camera');
         const backButton = document.getElementById('back-button');
-        const svgFrame = document.getElementById('svg-frame');
         const customFrame = document.getElementById('custom-frame');
-        const frameOptions = document.querySelectorAll('.frame-option');
         const saveInfo = document.getElementById('save-info');
         const flash = document.getElementById('flash');
         const statusMessage = document.getElementById('status-message');
@@ -313,6 +212,50 @@
         let stream = null;
         let facingMode = 'user'; // 初期値: フロントカメラ
         let frameEnabled = true; // フレーム表示フラグ
+        
+        // プレビュー用の透明処理
+        function processPreviewFrame() {
+            try {
+                // プレビュー時にもフレームの白背景を透過させる
+                const previewImg = document.getElementById('custom-frame');
+                
+                // 一時キャンバスのサイズを設定
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = previewImg.naturalWidth || 300;
+                tempCanvas.height = previewImg.naturalHeight || 300;
+                
+                // 一時キャンバスをクリア
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // 画像を一時キャンバスに描画
+                tempCtx.drawImage(previewImg, 0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // ピクセルデータを取得
+                const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                const data = imageData.data;
+                
+                // 白色を透明に
+                for (let i = 0; i < data.length; i += 4) {
+                    // RGBが高い値（白または明るい色）なら透明に
+                    if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) {
+                        data[i + 3] = 0; // アルファチャンネルを0に
+                    }
+                }
+                
+                // 処理した画像を一時キャンバスに戻す
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // 新しい画像URLを生成
+                const processedImageUrl = tempCanvas.toDataURL('image/png');
+                
+                // プレビュー画像のソースを更新
+                previewImg.src = processedImageUrl;
+                
+                console.log('プレビューフレームの透過処理完了');
+            } catch (e) {
+                console.error('フレーム透過処理エラー:', e);
+            }
+        }
         
         // メッセージ表示関数
         function showMessage(message, duration = 3000) {
@@ -378,27 +321,6 @@
             }
         }
         
-        // フレーム表示を更新する関数
-        function updateFrameDisplay() {
-            const selectedFrame = document.querySelector('.frame-option.active').dataset.frame;
-            
-            // すべてのフレームを非表示に
-            svgFrame.style.display = 'none';
-            customFrame.style.display = 'none';
-            
-            if (selectedFrame === 'svg' && frameEnabled) {
-                // SVGフレームを表示
-                svgFrame.style.display = 'block';
-                console.log('SVGフレーム表示を有効化');
-            } else if (selectedFrame === 'custom' && frameEnabled) {
-                // ミャクミャクフレームを表示
-                customFrame.style.display = 'block';
-                console.log('ミャクミャクフレーム表示を有効化');
-            } else {
-                console.log('フレーム表示を無効化');
-            }
-        }
-        
         // 写真撮影関数 - 背景透過処理を強化
         function takePhoto() {
             try {
@@ -418,109 +340,59 @@
                 // 背景として写真を描画
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                // フレームが選択されているか確認
-                const selectedFrame = document.querySelector('.frame-option.active').dataset.frame;
-                
-                if (selectedFrame === 'svg' && frameEnabled) {
-                    try {
-                        // キャンバスの中心
-                        const centerX = canvas.width / 2;
-                        const centerY = canvas.height / 2;
-                        
-                        // SVGのサイズを計算
-                        const svgSize = Math.min(canvas.width, canvas.height) * 0.8;
-                        const svgLeft = centerX - (svgSize / 2);
-                        const svgTop = centerY - (svgSize / 2);
-                        
-                        // SVGを直接描画
-                        // 赤い丸
-                        context.strokeStyle = 'red';
-                        context.lineWidth = 10;
-                        context.beginPath();
-                        context.arc(centerX, centerY, svgSize * 0.4, 0, Math.PI * 2);
-                        context.stroke();
-                        
-                        // 青い星（左上）
-                        context.fillStyle = 'blue';
-                        context.beginPath();
-                        const starX1 = svgLeft + svgSize * 0.2;
-                        const starY1 = svgTop + svgSize * 0.2;
-                        drawStar(context, starX1, starY1, 5, svgSize * 0.05, svgSize * 0.03);
-                        context.fill();
-                        
-                        // 緑の星（右下）
-                        context.fillStyle = 'green';
-                        context.beginPath();
-                        const starX2 = svgLeft + svgSize * 0.8;
-                        const starY2 = svgTop + svgSize * 0.8;
-                        drawStar(context, starX2, starY2, 5, svgSize * 0.05, svgSize * 0.03);
-                        context.fill();
-                        
-                        // テキスト
-                        context.fillStyle = 'purple';
-                        context.font = `${svgSize * 0.07}px Arial`;
-                        context.textAlign = 'center';
-                        context.fillText('透明フレーム', centerX, centerY);
-                        
-                        console.log('SVGフレームを直接描画しました');
-                    } catch (e) {
-                        console.error('フレーム描画エラー:', e);
+                try {
+                    // --- クロマキー風の処理で白背景を透過 ---
+                    const imgEl = document.getElementById('custom-frame');
+                    
+                    // 一時キャンバスを使用
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    
+                    // キャンバスの中心
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    
+                    // 画像サイズの計算（キャンバスの40%に制限→小さくすることで目立ちにくく）
+                    const maxSize = Math.min(canvas.width, canvas.height) * 0.4;
+                    
+                    // アスペクト比を維持
+                    let drawWidth, drawHeight;
+                    if (imgEl.naturalWidth > imgEl.naturalHeight) {
+                        drawWidth = maxSize;
+                        drawHeight = maxSize * (imgEl.naturalHeight / imgEl.naturalWidth);
+                    } else {
+                        drawHeight = maxSize;
+                        drawWidth = maxSize * (imgEl.naturalWidth / imgEl.naturalHeight);
                     }
-                } else if (selectedFrame === 'custom' && frameEnabled) {
-                    try {
-                        // --- 新しいアプローチ：クロマキー風の処理で白背景を透過 ---
-                        const imgEl = document.getElementById('custom-frame');
-                        
-                        // 一時キャンバスを使用
-                        const tempCtx = tempCanvas.getContext('2d');
-                        tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-                        
-                        // キャンバスの中心
-                        const centerX = canvas.width / 2;
-                        const centerY = canvas.height / 2;
-                        
-                        // 画像サイズの計算（キャンバスの40%に制限→小さくすることで目立ちにくく）
-                        const maxSize = Math.min(canvas.width, canvas.height) * 0.4;
-                        
-                        // アスペクト比を維持
-                        let drawWidth, drawHeight;
-                        if (imgEl.naturalWidth > imgEl.naturalHeight) {
-                            drawWidth = maxSize;
-                            drawHeight = maxSize * (imgEl.naturalHeight / imgEl.naturalWidth);
-                        } else {
-                            drawHeight = maxSize;
-                            drawWidth = maxSize * (imgEl.naturalWidth / imgEl.naturalHeight);
+                    
+                    // 描画位置（中央配置）
+                    const x = (tempCanvas.width - drawWidth) / 2;
+                    const y = (tempCanvas.height - drawHeight) / 2;
+                    
+                    // フレーム画像を一時キャンバスに描画
+                    tempCtx.drawImage(imgEl, x, y, drawWidth, drawHeight);
+                    
+                    // ピクセルデータを取得して処理
+                    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                    const data = imageData.data;
+                    
+                    // 白または明るい色を透明に
+                    for (let i = 0; i < data.length; i += 4) {
+                        // RGBがすべて高い値（白または明るい色）なら透明に
+                        if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) {
+                            data[i + 3] = 0; // アルファチャンネルを0に
                         }
-                        
-                        // 描画位置（中央配置）
-                        const x = (tempCanvas.width - drawWidth) / 2;
-                        const y = (tempCanvas.height - drawHeight) / 2;
-                        
-                        // フレーム画像を一時キャンバスに描画
-                        tempCtx.drawImage(imgEl, x, y, drawWidth, drawHeight);
-                        
-                        // ピクセルデータを取得して処理
-                        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-                        const data = imageData.data;
-                        
-                        // 白または明るい色を透明に
-                        for (let i = 0; i < data.length; i += 4) {
-                            // RGBがすべて高い値（白または明るい色）なら透明に
-                            if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) {
-                                data[i + 3] = 0; // アルファチャンネルを0に
-                            }
-                        }
-                        
-                        // 処理した画像を一時キャンバスに戻す
-                        tempCtx.putImageData(imageData, 0, 0);
-                        
-                        // 処理済みの一時キャンバスをメインキャンバスに描画
-                        context.drawImage(tempCanvas, 0, 0);
-                        
-                        console.log('ミャクミャクフレームを透過処理して描画しました');
-                    } catch (e) {
-                        console.error('ミャクミャクフレーム描画エラー:', e);
                     }
+                    
+                    // 処理した画像を一時キャンバスに戻す
+                    tempCtx.putImageData(imageData, 0, 0);
+                    
+                    // 処理済みの一時キャンバスをメインキャンバスに描画
+                    context.drawImage(tempCanvas, 0, 0);
+                    
+                    console.log('ミャクミャクフレームを透過処理して描画しました');
+                } catch (e) {
+                    console.error('ミャクミャクフレーム描画エラー:', e);
                 }
                 
                 // 写真処理完了
@@ -532,32 +404,6 @@
             }
         }
         
-        // 星を描画する関数
-        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
-            let rot = Math.PI / 2 * 3;
-            let x = cx;
-            let y = cy;
-            let step = Math.PI / spikes;
-
-            ctx.beginPath();
-            ctx.moveTo(cx, cy - outerRadius);
-
-            for (let i = 0; i < spikes; i++) {
-                x = cx + Math.cos(rot) * outerRadius;
-                y = cy + Math.sin(rot) * outerRadius;
-                ctx.lineTo(x, y);
-                rot += step;
-
-                x = cx + Math.cos(rot) * innerRadius;
-                y = cy + Math.sin(rot) * innerRadius;
-                ctx.lineTo(x, y);
-                rot += step;
-            }
-
-            ctx.lineTo(cx, cy - outerRadius);
-            ctx.closePath();
-        }
-        
         // 写真処理完了時の共通処理
         function processCompletedPhoto() {
             try {
@@ -567,7 +413,6 @@
                 // UI表示切替
                 photo.style.display = 'block';
                 video.style.display = 'none';
-                svgFrame.style.display = 'none';
                 customFrame.style.display = 'none';
                 
                 // ボタン表示切替
@@ -609,8 +454,8 @@
             video.style.display = 'block';
             saveInfo.style.display = 'none';
             
-            // フレーム表示状態を更新
-            updateFrameDisplay();
+            // フレーム表示を戻す
+            customFrame.style.display = 'block';
             
             // ボタン表示を戻す
             takePhotoButton.style.display = 'block';
@@ -625,6 +470,15 @@
             // 初期状態でカメラを起動
             startCamera();
             
+            // 画像ロード完了時にプレビュー画像も透過処理
+            customFrame.onload = function() {
+                // 画像が読み込まれた後に透過処理を実行
+                setTimeout(processPreviewFrame, 100);
+            };
+            
+            // 初期処理として透過処理も実行
+            setTimeout(processPreviewFrame, 300);
+            
             // 撮影ボタンのイベントリスナー
             takePhotoButton.addEventListener('click', takePhoto);
             
@@ -636,30 +490,6 @@
             
             // 戻るボタンのイベントリスナー
             backButton.addEventListener('click', retakePhoto);
-            
-            // フレーム選択のイベントリスナー
-            frameOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    // 選択状態の更新
-                    frameOptions.forEach(opt => {
-                        opt.classList.remove('active');
-                    });
-                    option.classList.add('active');
-                    
-                    // フレーム表示の更新
-                    updateFrameDisplay();
-                    
-                    // 選択メッセージ
-                    const selectedFrame = option.dataset.frame;
-                    if (selectedFrame === 'svg') {
-                        showMessage('SVGフレームを設定しました', 1000);
-                    } else if (selectedFrame === 'custom') {
-                        showMessage('ミャクミャクフレームを設定しました', 1000);
-                    } else {
-                        showMessage('フレームを解除しました', 1000);
-                    }
-                });
-            });
         });
     </script>
 </body>
