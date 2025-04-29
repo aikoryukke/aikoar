@@ -3,76 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
-<title>AR Camera v2</title>
+<title>AR Camera Debug</title>
 <style>
   html,body{margin:0;padding:0;background:#000;overflow:hidden}
-  #wrap{position:relative;width:100vw;height:100dvh;}
-  video, #frame{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  #frame{pointer-events:none;}
+  #wrap{position:relative;width:100vw;height:100dvh}
+  video,#frame{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #frame{pointer-events:none}
   #controls{
-    position:fixed;        /* ← Safe-Area対応で fixed */
-    bottom:calc(env(safe-area-inset-bottom)+20px);
-    left:0;width:100%;
-    display:flex;justify-content:center;gap:14px;
-    z-index:1000;          /* ← フレームの上に出す */
+    position:fixed;bottom:calc(env(safe-area-inset-bottom)+20px);left:0;width:100%;
+    display:flex;justify-content:center;gap:14px;z-index:1000
   }
-  button{font-size:16px;padding:12px 20px;border-radius:10px;border:none;background:#fff;opacity:.92;}
-  #log{position:absolute;top:8px;left:8px;font:12px/1 monospace;color:#0f0;z-index:1000}
+  button{font-size:16px;padding:12px 20px;border:none;border-radius:10px;background:#fff;opacity:.9}
+  #log{position:absolute;top:8px;left:8px;font:12px/1 monospace;color:#0f0;z-index:1000;
+       background:rgba(0,0,0,.4);padding:2px 4px;border-radius:4px;}
 </style>
 </head>
 <body>
 <div id="wrap">
   <video id="video" playsinline muted></video>
-  <img id="frame" src="frame.png" alt="">
+  <img  id="frame" src="frame.png" alt="">
   <div id="log"></div>
+
   <div id="controls">
     <button id="start">カメラ開始</button>
     <button id="shot" style="display:none;">撮影</button>
   </div>
+
   <canvas id="cvs" style="display:none;"></canvas>
 </div>
 
 <script>
-const $ = id => document.getElementById(id);
+const $   = id => document.getElementById(id);
 const log = txt => { $.log.textContent = txt };
 
-let stream;
+let stream = null;
+
+// ──────────── カメラ開始 ────────────
 $('start').onclick = async () => {
-+   alert('ボタンは押されました');   // ← 本当にクリックが届いたか確認
-    try{
-      log('requesting…');
+  alert('ボタンは押されました');                 // ← クリック確認アラート
+  log('⏳ カメラ要求中…');
+
+  try{
+    // 背面優先で取得。失敗したらフロントへフォールバック
     stream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'}}, audio:false
+      video:{ facingMode:{ ideal:'environment'} },
+      audio:false
     }).catch(err=>{
-      // 背面カメラが無い／拒否 → フロントにフォールバック
       if(err.name==='OverconstrainedError') return navigator.mediaDevices.getUserMedia({video:true});
       throw err;
     });
+
     $('video').srcObject = stream;
     await $('video').play();
+
     $('start').style.display='none';
-    $('shot').style.display='inline-block';
-    log('stream OK');
+    $('shot' ).style.display='inline-block';
+    log('✅ stream OK');
   }catch(e){
-    log('ERROR:'+e.name);
-    alert('カメラが起動できません: '+e.message);
+    log('❌ ' + e.name + ': ' + e.message);      // ← 失敗原因を画面左上に表示
+    alert('カメラが起動できません:\n' + e.name + '\n' + e.message);
   }
 };
 
-$('shot').onclick = ()=>{
+// ──────────── 撮影＆保存 ────────────
+$('shot').onclick = () => {
   const v = $('video'), cvs = $('cvs');
-  cvs.width = v.videoWidth; cvs.height = v.videoHeight;
+  cvs.width  = v.videoWidth;
+  cvs.height = v.videoHeight;
   const ctx = cvs.getContext('2d');
   ctx.drawImage(v,0,0,cvs.width,cvs.height);
   ctx.drawImage($('frame'),0,0,cvs.width,cvs.height);
+
   cvs.toBlob(b=>{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(b);
-    a.download='photo.png'; a.click();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'photo.png';
+    a.click();
     URL.revokeObjectURL(a.href);
   });
 };
 
+// ──────────── ページ離脱時はカメラ停止 ────────────
 window.addEventListener('beforeunload',()=>stream?.getTracks().forEach(t=>t.stop()));
 </script>
 </body>
