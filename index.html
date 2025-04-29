@@ -160,11 +160,13 @@
         }
         
         #custom-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            position: absolute;
-            display: block;
             object-fit: contain;
+            display: block;
         }
     </style>
 </head>
@@ -222,14 +224,16 @@
                 
                 // 一時キャンバスのサイズを設定
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = previewImg.naturalWidth || 300;
-                tempCanvas.height = previewImg.naturalHeight || 300;
+                tempCanvas.width = Math.max(previewImg.naturalWidth || 300, window.innerWidth);
+                tempCanvas.height = Math.max(previewImg.naturalHeight || 300, window.innerHeight);
                 
                 // 一時キャンバスをクリア
                 tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                 
-                // 画像を一時キャンバスに描画
-                tempCtx.drawImage(previewImg, 0, 0, tempCanvas.width, tempCanvas.height);
+                // イメージをスクリーンサイズに拡大して描画
+                tempCtx.drawImage(previewImg, 
+                    0, 0, previewImg.naturalWidth, previewImg.naturalHeight,
+                    0, 0, tempCanvas.width, tempCanvas.height);
                 
                 // ピクセルデータを取得
                 const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
@@ -238,7 +242,7 @@
                 // 白色を透明に
                 for (let i = 0; i < data.length; i += 4) {
                     // RGBが高い値（白または明るい色）なら透明に
-                    if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) {
+                    if (data[i] > 220 && data[i + 1] > 220 && data[i + 2] > 220) {
                         data[i + 3] = 0; // アルファチャンネルを0に
                     }
                 }
@@ -290,8 +294,8 @@
                 const constraints = {
                     video: {
                         facingMode: facingMode,
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: window.innerWidth },
+                        height: { ideal: window.innerHeight }
                     },
                     audio: false
                 };
@@ -322,7 +326,7 @@
             }
         }
         
-        // 写真撮影関数 - 背景透過処理を強化
+        // 写真撮影関数 - 位置ずれ解消版
         function takePhoto() {
             try {
                 // フラッシュ表示
@@ -342,23 +346,31 @@
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
                 try {
-                    // --- クロマキー風の処理で白背景を透過 ---
-                    const imgEl = document.getElementById('custom-frame');
+                    // フレーム画像を直接キャンバスに描画
+                    const frameImg = customFrame; // DOMのimg要素をそのまま使用
                     
-                    // 一時キャンバスを使用
+                    // 現在の表示位置とサイズを取得（CSSの位置を使用）
+                    const frameRect = frameImg.getBoundingClientRect();
+                    
+                    // キャンバス座標に変換するための比率を計算
+                    const scaleX = canvas.width / window.innerWidth;
+                    const scaleY = canvas.height / window.innerHeight;
+                    
+                    // キャンバス上のフレーム位置とサイズを計算
+                    const frameX = frameRect.left * scaleX;
+                    const frameY = frameRect.top * scaleY;
+                    const frameWidth = frameRect.width * scaleX;
+                    const frameHeight = frameRect.height * scaleY;
+                    
+                    // キャンバスと同じサイズの一時キャンバスを作成
                     const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
                     tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                     
-                    // 画像サイズを全画面に設定
-                    const drawWidth = tempCanvas.width;
-                    const drawHeight = tempCanvas.height;
-                    
-                    // 描画位置を全画面に
-                    const x = 0;
-                    const y = 0;
-                    
                     // フレーム画像を一時キャンバスに描画
-                    tempCtx.drawImage(imgEl, x, y, drawWidth, drawHeight);
+                    tempCtx.drawImage(frameImg, 0, 0, frameImg.naturalWidth, frameImg.naturalHeight,
+                                    0, 0, tempCanvas.width, tempCanvas.height);
                     
                     // ピクセルデータを取得して処理
                     const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
@@ -367,7 +379,7 @@
                     // 白または明るい色を透明に
                     for (let i = 0; i < data.length; i += 4) {
                         // RGBがすべて高い値（白または明るい色）なら透明に
-                        if (data[i] > 230 && data[i + 1] > 230 && data[i + 2] > 230) {
+                        if (data[i] > 220 && data[i + 1] > 220 && data[i + 2] > 220) {
                             data[i + 3] = 0; // アルファチャンネルを0に
                         }
                     }
@@ -378,9 +390,9 @@
                     // 処理済みの一時キャンバスをメインキャンバスに描画
                     context.drawImage(tempCanvas, 0, 0);
                     
-                    console.log('ミャクミャクフレームを透過処理して描画しました');
+                    console.log('フレームを描画しました (位置ずれ解消版)');
                 } catch (e) {
-                    console.error('ミャクミャクフレーム描画エラー:', e);
+                    console.error('フレーム描画エラー:', e);
                 }
                 
                 // 写真処理完了
@@ -451,6 +463,12 @@
             backButton.style.display = 'none';
         }
         
+        // ウィンドウサイズ変更時の処理
+        window.addEventListener('resize', function() {
+            // フレーム処理の再実行
+            setTimeout(processPreviewFrame, 300);
+        });
+        
         // ページ読み込み完了時の処理
         document.addEventListener('DOMContentLoaded', () => {
             console.log('ページ読み込み完了');
@@ -461,11 +479,11 @@
             // 画像ロード完了時にプレビュー画像も透過処理
             customFrame.onload = function() {
                 // 画像が読み込まれた後に透過処理を実行
-                setTimeout(processPreviewFrame, 100);
+                setTimeout(processPreviewFrame, 300);
             };
             
             // 初期処理として透過処理も実行
-            setTimeout(processPreviewFrame, 300);
+            setTimeout(processPreviewFrame, 500);
             
             // 撮影ボタンのイベントリスナー
             takePhotoButton.addEventListener('click', takePhoto);
