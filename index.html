@@ -368,8 +368,8 @@
             }
         }
         
-        // 写真撮影関数
-        function takePhoto() {
+        // 写真撮影関数 - 非同期処理に変更
+        async function takePhoto() {
             try {
                 // フラッシュ表示
                 showFlash();
@@ -386,6 +386,8 @@
                 
                 // 背景として写真を描画
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                console.log('写真をキャンバスに描画しました');
                 
                 // フレームが選択されているか確認
                 const selectedFrame = document.querySelector('.frame-option.active').dataset.frame;
@@ -524,7 +526,15 @@
             if (selectedFrame === 'custom' && frameEnabled) {
                 // ミャクミャクフレーム（PNG）を表示
                 pngFrame.style.display = 'block';
-                console.log('PNGフレーム表示を有効化');
+                console.log('PNGフレーム表示を有効化, src:', pngFrame.src);
+                
+                // まだ読み込まれていない場合は読み込み完了をチェック
+                if (!pngFrame.complete || pngFrame.naturalWidth === 0) {
+                    pngFrame.onload = () => {
+                        console.log('PNGフレーム読み込み完了（遅延）');
+                        showMessage('フレームを設定しました', 1000);
+                    };
+                }
             } else if (selectedFrame === 'svg' && frameEnabled) {
                 // SVGフレームを表示
                 svgFrame.style.display = 'block';
@@ -552,9 +562,19 @@
                 // PNG画像をセット
                 document.getElementById('png-frame').src = testImage.src;
                 
+                // 初期ロード時にフレーム画像をプリロード
+                document.getElementById('png-frame').src = 'frame.png';
+                
                 // 初期状態では非表示（フレームが選択されていないため）
                 document.getElementById('png-frame').style.display = 'none';
                 document.getElementById('svg-frame').style.display = 'none';
+                
+                // プリロード用別画像を使用してロード状態を確認する
+                const preloader = new Image();
+                preloader.src = 'frame.png?' + new Date().getTime();
+                preloader.onload = () => {
+                    console.log('フレーム画像のプリロードが完了しました');
+                };
             };
             
             testImage.onerror = function(e) {
