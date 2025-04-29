@@ -150,8 +150,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             z-index: 50;
             display: flex;
@@ -161,13 +161,12 @@
         
         .frame-image {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-width: 60%;
-            max-height: 60%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: none;
-            object-fit: contain;
+            object-fit: cover; /* 画面全体にフィットさせる */
         }
         
         /* フレーム選択用のスタイル */
@@ -183,8 +182,8 @@
         }
         
         .frame-option {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 10px;
             overflow: hidden;
             cursor: pointer;
@@ -201,9 +200,9 @@
         }
         
         .frame-option img {
-            max-width: 80%;
-            max-height: 80%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -269,10 +268,6 @@
         // 現在選択中のフレーム
         let currentFrame = 'frame1';
         
-        // カメラ設定
-        let stream = null;
-        let facingMode = 'user'; // 初期値: フロントカメラ
-        
         // フレーム選択を適用する関数
         function applyFrameSelection() {
             // すべてのフレーム画像を非表示に
@@ -296,19 +291,39 @@
             processFrameTransparency(frames[currentFrame]);
         }
         
+        // すべてのフレームを事前に読み込む
+        function preloadFrames() {
+            Object.values(frames).forEach(frame => {
+                // 画像が既に読み込まれているか確認
+                if (frame.complete) {
+                    processFrameTransparency(frame);
+                } else {
+                    // 読み込み完了イベントを設定
+                    frame.onload = function() {
+                        processFrameTransparency(frame);
+                    };
+                    
+                    // 念のため再読み込み
+                    const currentSrc = frame.src;
+                    frame.src = currentSrc + '?t=' + new Date().getTime();
+                }
+            });
+        }
+        
         // フレームの透明処理
         function processFrameTransparency(frameElement) {
             try {
                 // 一時キャンバスのサイズを設定
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = frameElement.naturalWidth || 300;
-                tempCanvas.height = frameElement.naturalHeight || 300;
+                tempCanvas.width = Math.max(frameElement.naturalWidth || 300, window.innerWidth);
+                tempCanvas.height = Math.max(frameElement.naturalHeight || 300, window.innerHeight);
                 
                 // 一時キャンバスをクリア
                 tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                 
-                // 画像を一時キャンバスに描画 - アスペクト比を維持
-                tempCtx.drawImage(frameElement, 0, 0, frameElement.naturalWidth, frameElement.naturalHeight);
+                // 画像を一時キャンバスに描画 - 画面いっぱいに描画
+                tempCtx.drawImage(frameElement, 0, 0, frameElement.naturalWidth, frameElement.naturalHeight,
+                                 0, 0, tempCanvas.width, tempCanvas.height);
                 
                 // ピクセルデータを取得
                 const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
@@ -385,6 +400,9 @@
                     tempCanvas.width = video.videoWidth;
                     tempCanvas.height = video.videoHeight;
                     
+                    // フレーム表示を更新（カメラサイズ変更後）
+                    applyFrameSelection();
+                    
                     // ステータスメッセージを非表示
                     statusMessage.style.display = 'none';
                 };
@@ -422,54 +440,9 @@
                     // 選択中のフレーム画像を取得
                     const frameImg = frames[currentFrame];
                     
-                    // キャンバスの中心座標
-                    const canvasCenterX = canvas.width / 2;
-                    const canvasCenterY = canvas.height / 2;
-                    
-                    // アスペクト比を維持したまま、フレームサイズを計算
-                    const frameAspect = frameImg.naturalWidth / frameImg.naturalHeight;
-                    
-                    // キャンバスの60%のサイズに設定（形状を維持するため）
-                    let frameWidth = canvas.width * 0.6;
-                    let frameHeight = frameWidth / frameAspect;
-                    
-                    // 縦長の場合は高さを基準にする
-                    if (frameHeight > canvas.height * 0.6) {
-                        frameHeight = canvas.height * 0.6;
-                        frameWidth = frameHeight * frameAspect;
-                    }
-                    
-                    // フレームの左上座標（中央配置）
-                    const frameX = canvasCenterX - (frameWidth / 2);
-                    const frameY = canvasCenterY - (frameHeight / 2);
-                    
-                    // 一時キャンバスを使用してフレームを処理
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = canvas.width;
-                    tempCanvas.height = canvas.height;
-                    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-                    
-                    // フレーム画像を描画（アスペクト比を維持）
-                    tempCtx.drawImage(frameImg, 0, 0, frameImg.naturalWidth, frameImg.naturalHeight,
-                                      frameX, frameY, frameWidth, frameHeight);
-                    
-                    // ピクセルデータを取得して処理
-                    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-                    const data = imageData.data;
-                    
-                    // 白または明るい色を透明に
-                    for (let i = 0; i < data.length; i += 4) {
-                        // RGBがすべて高い値（白または明るい色）なら透明に
-                        if (data[i] > 220 && data[i + 1] > 220 && data[i + 2] > 220) {
-                            data[i + 3] = 0; // アルファチャンネルを0に
-                        }
-                    }
-                    
-                    // 処理した画像を一時キャンバスに戻す
-                    tempCtx.putImageData(imageData, 0, 0);
-                    
-                    // 処理済みの一時キャンバスをメインキャンバスに描画
-                    context.drawImage(tempCanvas, 0, 0);
+                    // フレームを全画面サイズで描画
+                    context.drawImage(frameImg, 0, 0, frameImg.naturalWidth, frameImg.naturalHeight,
+                                     0, 0, canvas.width, canvas.height);
                     
                     console.log('フレームを描画しました:', currentFrame);
                 } catch (e) {
@@ -575,17 +548,19 @@
             
             // 初期フレーム選択を適用
             frameOptions[0].classList.add('active');
-            applyFrameSelection();
+            
+            // フレームを事前に読み込む
+            preloadFrames();
+            
+            // 初期フレーム選択を適用
+            setTimeout(applyFrameSelection, 500);
             
             // 初期状態でカメラを起動
             startCamera();
             
-            // フレーム画像読み込み完了イベント
-            Object.values(frames).forEach(frame => {
-                frame.onload = function() {
-                    // 各フレームの透過処理
-                    processFrameTransparency(frame);
-                };
+            // 画面サイズ変更時にフレーム表示を更新
+            window.addEventListener('resize', () => {
+                setTimeout(applyFrameSelection, 300);
             });
             
             // 撮影ボタンのイベントリスナー
@@ -599,7 +574,21 @@
             
             // 戻るボタンのイベントリスナー
             backButton.addEventListener('click', retakePhoto);
+            
+            // 定期的にフレーム表示をチェック（不具合対策）
+            setInterval(() => {
+                const selectedFrame = frames[currentFrame];
+                if (selectedFrame && selectedFrame.style.display !== 'block' && 
+                    video.style.display !== 'none') {
+                    console.log('フレーム表示をリセットします');
+                    applyFrameSelection();
+                }
+            }, 2000);
         });
+        
+        // グローバルスコープでstreamを定義
+        let stream = null;
+        let facingMode = 'user'; // 初期値: フロントカメラ
     </script>
 </body>
 </html>
