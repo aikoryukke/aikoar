@@ -38,8 +38,9 @@ const log = txt => { $.log.textContent = txt };
 
 let stream;
 $('start').onclick = async () => {
-  try{
-    log('requesting…');
++   alert('ボタンは押されました');   // ← 本当にクリックが届いたか確認
+    try{
+      log('requesting…');
     stream = await navigator.mediaDevices.getUserMedia({
       video:{facingMode:{ideal:'environment'}}, audio:false
     }).catch(err=>{
