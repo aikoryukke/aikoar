@@ -150,8 +150,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             pointer-events: none;
             z-index: 50;
             display: flex;
@@ -160,10 +160,11 @@
         }
         
         #custom-frame {
-            max-width: 40%;
-            max-height: 40%;
+            width: 100%;
+            height: 100%;
             position: absolute;
             display: block;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -348,26 +349,13 @@
                     const tempCtx = tempCanvas.getContext('2d');
                     tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                     
-                    // キャンバスの中心
-                    const centerX = canvas.width / 2;
-                    const centerY = canvas.height / 2;
+                    // 画像サイズを全画面に設定
+                    const drawWidth = tempCanvas.width;
+                    const drawHeight = tempCanvas.height;
                     
-                    // 画像サイズの計算（キャンバスの40%に制限→小さくすることで目立ちにくく）
-                    const maxSize = Math.min(canvas.width, canvas.height) * 0.4;
-                    
-                    // アスペクト比を維持
-                    let drawWidth, drawHeight;
-                    if (imgEl.naturalWidth > imgEl.naturalHeight) {
-                        drawWidth = maxSize;
-                        drawHeight = maxSize * (imgEl.naturalHeight / imgEl.naturalWidth);
-                    } else {
-                        drawHeight = maxSize;
-                        drawWidth = maxSize * (imgEl.naturalWidth / imgEl.naturalHeight);
-                    }
-                    
-                    // 描画位置（中央配置）
-                    const x = (tempCanvas.width - drawWidth) / 2;
-                    const y = (tempCanvas.height - drawHeight) / 2;
+                    // 描画位置を全画面に
+                    const x = 0;
+                    const y = 0;
                     
                     // フレーム画像を一時キャンバスに描画
                     tempCtx.drawImage(imgEl, x, y, drawWidth, drawHeight);
