@@ -2,6 +2,572 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>シンプル写真撮影アプリ</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+            max-width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            padding: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        .frame-selector {
+            display: flex;
+            padding: 10px;
+            gap: 10px;
+            overflow-x: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 40px;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+        
+        .frame-option {
+            width: 60px;
+            height: 45px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #333;
+        }
+        
+        .frame-option.active {
+            border-color: #4285f4;
+        }
+        
+        .frame-option.none::after {
+            content: "×";
+            font-size: 20px;
+            color: #f44336;
+        }
+        
+        .frame-option img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .camera-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
+        
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        #photo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        #canvas {
+            display: none;
+            position: absolute;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .camera-button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: white;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .switch-button, .back-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .back-button {
+            display: none;
+        }
+        
+        #save-info {
+            position: absolute;
+            bottom: 160px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            display: none;
+            z-index: 100;
+        }
+        
+        #flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+            transition: opacity 0.1s;
+        }
+        
+        #status-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
+            text-align: center;
+        }
+        
+        /* フレームオーバーレイ - 位置固定 */
+        #overlay-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #frame-image {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+            display: none;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>写真撮影アプリ</h1>
+        </header>
+        
+        <div class="frame-selector">
+            <div class="frame-option none active" data-frame="none"></div>
+            <div class="frame-option" data-frame="custom" style="position: relative; overflow: visible;">
+                <div style="background-color: #333; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                    <img src="frame.png" alt="カスタムフレーム" style="max-width: 80%; max-height: 80%; object-fit: contain;">
+                </div>
+                <div style="position: absolute; top: -10px; right: -10px; background-color: #ff5252; color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center;">✓</div>
+            </div>
+        </div>
+        
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <img id="photo" alt="撮影した写真">
+            <canvas id="canvas"></canvas>
+            
+            <div id="overlay-container">
+                <img id="frame-image" src="frame.png" alt="フレーム">
+            </div>
+            
+            <div id="status-message"></div>
+            
+            <div class="controls">
+                <button id="switch-camera" class="switch-button">↺</button>
+                <button id="take-photo" class="camera-button"></button>
+                <button id="back-button" class="back-button">←</button>
+            </div>
+            
+            <div id="save-info">画像を長押しして保存できます</div>
+        </div>
+        
+        <div id="flash"></div>
+    </div>
+    
+    <script>
+        // DOM要素の取得
+        const video = document.getElementById('video');
+        const photo = document.getElementById('photo');
+        const canvas = document.getElementById('canvas');
+        const takePhotoButton = document.getElementById('take-photo');
+        const switchCameraButton = document.getElementById('switch-camera');
+        const backButton = document.getElementById('back-button');
+        const frameImage = document.getElementById('frame-image');
+        const frameOptions = document.querySelectorAll('.frame-option');
+        const saveInfo = document.getElementById('save-info');
+        const flash = document.getElementById('flash');
+        const statusMessage = document.getElementById('status-message');
+        
+        // カメラ設定
+        let stream = null;
+        let facingMode = 'user'; // 初期値: フロントカメラ
+        let frameEnabled = false; // フレーム表示フラグ
+        
+        // メッセージ表示関数
+        function showMessage(message, duration = 3000) {
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, duration);
+        }
+        
+        // フラッシュエフェクト
+        function showFlash() {
+            flash.style.opacity = '1';
+            setTimeout(() => {
+                flash.style.opacity = '0';
+            }, 100);
+        }
+        
+        // カメラ起動
+        async function startCamera() {
+            try {
+                // 既存のストリームを停止
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                showMessage('カメラへのアクセスを許可してください...');
+                
+                // カメラアクセス設定
+                const constraints = {
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                };
+                
+                // カメラストリーム取得
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                
+                // カメラ準備完了
+                video.onloadedmetadata = () => {
+                    // キャンバスサイズをカメラに合わせる
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    // ステータスメッセージを非表示
+                    statusMessage.style.display = 'none';
+                };
+                
+                // ボタン有効化
+                takePhotoButton.disabled = false;
+                switchCameraButton.disabled = false;
+                
+            } catch (err) {
+                console.error('カメラエラー:', err);
+                showMessage('カメラへのアクセスに失敗しました。設定を確認してください。', 5000);
+            }
+        }
+        
+        // 写真撮影関数
+        function takePhoto() {
+            try {
+                // フラッシュ表示
+                showFlash();
+                
+                // ビデオ画像をキャンバスに描画
+                const context = canvas.getContext('2d', { alpha: true });
+                
+                // 画質向上設定
+                context.imageSmoothingEnabled = true;
+                context.imageSmoothingQuality = 'high';
+                
+                // キャンバスをクリア
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 背景として写真を描画
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // フレームが選択されているか確認
+                const selectedFrame = document.querySelector('.frame-option.active').dataset.frame;
+                
+                if (selectedFrame === 'custom' && frameEnabled) {
+                    // フレーム画像を描画する前と後の状態をコンソールに出力（デバッグ用）
+                    console.log('フレーム描画前のキャンバス状態:', canvas.toDataURL('image/png').substring(0, 100) + '...');
+                    
+                    try {
+                        // 新しい画像オブジェクトを作成
+                        const frameImg = new Image();
+                        frameImg.crossOrigin = "Anonymous"; // CORS対策
+                        
+                        frameImg.onload = () => {
+                            console.log('フレーム画像読み込み完了:', frameImg.width, 'x', frameImg.height);
+                            
+                            // キャンバスの中心に配置するための計算
+                            const centerX = canvas.width / 2;
+                            const centerY = canvas.height / 2;
+                            
+                            // 画像サイズの計算（キャンバスの80%を上限）
+                            const maxWidth = canvas.width * 0.8;
+                            const maxHeight = canvas.height * 0.8;
+                            
+                            // アスペクト比を維持したサイズ計算
+                            let drawWidth = frameImg.width;
+                            let drawHeight = frameImg.height;
+                            
+                            if (drawWidth > maxWidth || drawHeight > maxHeight) {
+                                const ratio = Math.min(maxWidth / drawWidth, maxHeight / drawHeight);
+                                drawWidth *= ratio;
+                                drawHeight *= ratio;
+                            }
+                            
+                            // 描画位置（中央配置）
+                            const x = centerX - (drawWidth / 2);
+                            const y = centerY - (drawHeight / 2);
+                            
+                            // 描画設定
+                            context.globalCompositeOperation = 'source-over';
+                            
+                            // フレームを中央に描画
+                            context.drawImage(frameImg, x, y, drawWidth, drawHeight);
+                            
+                            console.log('フレーム描画後のキャンバス状態:', canvas.toDataURL('image/png').substring(0, 100) + '...');
+                            
+                            // 写真処理完了
+                            processCompletedPhoto();
+                        };
+                        
+                        frameImg.onerror = (err) => {
+                            console.error('フレーム画像読み込みエラー:', err);
+                            showMessage('フレーム画像の読み込みに失敗しました');
+                            processCompletedPhoto();
+                        };
+                        
+                        // キャッシュ回避のためのタイムスタンプ付きURL
+                        frameImg.src = 'frame.png?' + new Date().getTime();
+                        
+                    } catch (e) {
+                        console.error('フレーム描画エラー:', e);
+                        processCompletedPhoto();
+                    }
+                } else {
+                    // フレームなしで完了
+                    processCompletedPhoto();
+                }
+                
+                // 写真処理完了時の共通処理
+                function processCompletedPhoto() {
+                    // キャンバスの画像をphoto要素に設定
+                    photo.src = canvas.toDataURL('image/png');
+                    
+                    // UI表示切替
+                    photo.style.display = 'block';
+                    video.style.display = 'none';
+                    frameImage.style.display = 'none';
+                    
+                    // ボタン表示切替
+                    takePhotoButton.style.display = 'none';
+                    switchCameraButton.style.display = 'none';
+                    backButton.style.display = 'block';
+                    
+                    // 保存情報表示
+                    saveInfo.style.display = 'block';
+                    
+                    // 保存用イベント設定
+                    setupImageSaving(photo);
+                }
+                
+            } catch (err) {
+                console.error('写真撮影エラー:', err);
+                showMessage('写真の撮影に失敗しました。もう一度お試しください。');
+            }
+        }
+        
+        // 画像保存設定
+        function setupImageSaving(photoElement) {
+            // 右クリックメニューを許可
+            photoElement.addEventListener('contextmenu', (e) => {
+                // デフォルト動作を許可
+            });
+            
+            // 長押しメニューを許可
+            photoElement.addEventListener('touchstart', () => {
+                // デフォルト動作を許可
+            });
+        }
+        
+        // 撮り直し関数
+        function retakePhoto() {
+            // UI表示を元に戻す
+            photo.style.display = 'none';
+            video.style.display = 'block';
+            saveInfo.style.display = 'none';
+            
+            // フレーム表示状態を更新
+            updateFrameDisplay();
+            
+            // ボタン表示を戻す
+            takePhotoButton.style.display = 'block';
+            switchCameraButton.style.display = 'block';
+            backButton.style.display = 'none';
+        }
+        
+        // フレーム表示を更新する関数
+        function updateFrameDisplay() {
+            const selectedFrame = document.querySelector('.frame-option.active').dataset.frame;
+            
+            if (selectedFrame === 'custom' && frameEnabled) {
+                frameImage.style.display = 'block';
+                console.log('フレーム表示を有効化');
+            } else {
+                frameImage.style.display = 'none';
+                console.log('フレーム表示を無効化');
+            }
+        }
+        
+        // ページ読み込み完了時の処理
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('ページ読み込み完了');
+            
+            // 初期状態でカメラを起動
+            startCamera();
+            
+            // フレーム画像のロード確認 - 完全に新しいアプローチ
+            const testImage = new Image();
+            testImage.crossOrigin = "Anonymous";
+            
+            testImage.onload = function() {
+                console.log('フレーム画像のロード成功:', testImage.width, 'x', testImage.height);
+                frameEnabled = true;
+                
+                // フレーム画像をセット
+                frameImage.src = testImage.src;
+                
+                // 初期状態では非表示（フレームが選択されていないため）
+                frameImage.style.display = 'none';
+            };
+            
+            testImage.onerror = function(e) {
+                console.error('フレーム画像のロード失敗:', e);
+                showMessage('フレーム画像の読み込みに失敗しました。', 3000);
+                frameEnabled = false;
+            };
+            
+            // キャッシュ対策
+            testImage.src = 'frame.png?' + new Date().getTime();
+            
+            // 撮影ボタンのイベントリスナー
+            takePhotoButton.addEventListener('click', takePhoto);
+            
+            // カメラ切替ボタンのイベントリスナー
+            switchCameraButton.addEventListener('click', () => {
+                facingMode = facingMode === 'user' ? 'environment' : 'user';
+                startCamera();
+            });
+            
+            // 戻るボタンのイベントリスナー
+            backButton.addEventListener('click', retakePhoto);
+            
+            // フレーム選択のイベントリスナー
+            frameOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    // 選択状態の更新
+                    frameOptions.forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    option.classList.add('active');
+                    
+                    // フレーム表示の更新
+                    updateFrameDisplay();
+                    
+                    // 選択メッセージ
+                    const selectedFrame = option.dataset.frame;
+                    if (selectedFrame === 'custom') {
+                        showMessage('フレームを設定しました', 1000);
+                    } else {
+                        showMessage('フレームを解除しました', 1000);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>シンプル写真撮影アプリ</title>
     <style>
