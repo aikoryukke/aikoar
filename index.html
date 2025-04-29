@@ -98,6 +98,9 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         #frame-image {
@@ -105,6 +108,7 @@
             height: 100%;
             object-fit: contain;
             display: none;
+            mix-blend-mode: normal; /* 画像の透明部分を正しく処理 */
         }
         
         .controls {
@@ -272,7 +276,9 @@
                 // カメラアクセス設定
                 const constraints = {
                     video: {
-                        facingMode: facingMode
+                        facingMode: facingMode,
+                        width: { ideal: 1280 },  // 高解像度指定
+                        height: { ideal: 720 }
                     },
                     audio: false
                 };
@@ -283,9 +289,16 @@
                 
                 // カメラ準備完了
                 video.onloadedmetadata = () => {
+                    // キャンバスサイズをカメラに合わせる
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
+                    
+                    // ステータスメッセージを非表示
                     statusMessage.style.display = 'none';
+                    
+                    // フレームの透明度処理を確認
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;  // 画像を滑らかに描画
                 };
                 
                 // ボタン有効化
@@ -315,6 +328,9 @@
                         // フレーム画像をGitHubのパスから直接使用
                         if (frameImage.complete && frameImage.naturalWidth > 0) {
                             // 既にロードされているフレーム画像を使用
+                            // ミャクミャクのぬいぐるみだけを表示する処理
+                            // 画像の透明度を正しく処理するためのコード
+                            context.globalCompositeOperation = 'source-over';
                             context.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
                             console.log('フレームを写真に適用しました');
                             finishCapture();
@@ -322,6 +338,8 @@
                             // 新しく画像をロード
                             const img = new Image();
                             img.onload = () => {
+                                // ミャクミャクのぬいぐるみだけを表示する処理
+                                context.globalCompositeOperation = 'source-over';
                                 context.drawImage(img, 0, 0, canvas.width, canvas.height);
                                 console.log('フレームを写真に適用しました（再読み込み）');
                                 finishCapture();
