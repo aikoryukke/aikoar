@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>Simple AR Camera</title>
+  <style>
+    html,body {margin:0;padding:0;overflow:hidden;background:#000;}
+    #wrapper       {position:relative;width:100vw;height:100vh;}
+    video          {position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
+    #frame         {position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+    #controls      {position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+                    display:flex;gap:12px;}
+    button         {font-size:16px;padding:10px 18px;border:none;border-radius:8px;
+                    background:#fff;opacity:.9;}
+  </style>
+</head>
+<body>
+  <div id="wrapper">
+    <video id="video" playsinline muted></video>
+    <img id="frame" src="frame.png" alt="frame">
+    <div id="controls">
+      <button id="startBtn">カメラ開始</button>
+      <button id="shotBtn"  style="display:none;">撮影</button>
+    </div>
+    <!-- オフスクリーン描画用 -->
+    <canvas id="canvas" style="display:none;"></canvas>
+  </div>
+
+  <script>
+  const video   = document.getElementById('video');
+  const frame   = document.getElementById('frame');
+  const canvas  = document.getElementById('canvas');
+  const startBtn= document.getElementById('startBtn');
+  const shotBtn = document.getElementById('shotBtn');
+
+  let stream = null;
+
+  // 1️⃣ カメラ起動（ユーザー操作必須：iOS の制約）
+  startBtn.addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },  // 背面カメラ優先
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      startBtn.style.display = 'none';
+      shotBtn.style.display  = 'inline-block';
+    } catch(e){
+      alert('カメラにアクセスできませんでした: ' + e.message);
+    }
+  });
+
+  // 2️⃣ 撮影 → 画像保存
+  shotBtn.addEventListener('click', () => {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+
+    // Canvas を動画サイズに合わせて描画
+    canvas.width  = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);          // 背景: カメラ映像
+    ctx.drawImage(frame, 0, 0, w, h);          // 前景: PNG フレーム
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'photo.png';             // 端末の写真フォルダに保存
+      link.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
+
+  // 3️⃣ ページ離脱時はカメラ停止（バッテリー節約）
+  window.addEventListener('beforeunload', () => {
+    stream?.getTracks().forEach(t => t.stop());
+  });
+  </script>
+</body>
+</html>
